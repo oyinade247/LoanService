@@ -35,3 +35,11 @@ jobs:
 
       - name: Push Docker Image
         run: docker push oyinade247/loan-service:1.0
+
+      - name: Print secret lengths
+        run: |
+          echo "USER LEN = ${#DOCKER_USERNAME}"
+          echo "PASS LEN = ${#DOCKER_PASSWORD}"
+        env:
+          DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
+          DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
