@@ -9,6 +9,6 @@ public class Reference {
     @GeneratedValue(strategy = GenerationType.UUID)
     private String id;
     private String nextOfKinName;
-    private String nextOfKinAddress;
+    //private String nextOfKinAddress;
 
 }
