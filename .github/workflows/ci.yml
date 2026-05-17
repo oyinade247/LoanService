@@ -38,20 +38,23 @@ jobs:
 
       - name: Configure Docker (disable credential helper)
         run: |
-          # Remove any existing Docker config that may reference a broken credential helper
           rm -f ~/.docker/config.json
           mkdir -p ~/.docker
-          # Write a clean config.json with credsStore explicitly empty.
-          # This tells Docker NOT to use any system credential helper
-          # (e.g. docker-credential-secretservice on Ubuntu) which is what
-          # causes the "malformed HTTP Authorization header" error on GitHub Actions.
-          # Credentials will be stored as base64 directly in config.json instead.
+          # credsStore="" disables system credential helpers (secretservice, etc.)
+          # which are the root cause of the malformed Authorization header.
           echo '{"auths":{},"credsStore":""}' > ~/.docker/config.json
 
       - name: Login to Docker Hub
-        # Use echo pipe directly instead of docker/login-action to avoid
-        # the action re-enabling the credential helper internally.
-        run: echo "$DOCKER_PASSWORD" | docker login docker.io -u "$DOCKER_USERNAME" --password-stdin
+        run: |
+          # printf '%s' avoids adding newlines. tr -d strips any hidden whitespace
+          # or newline characters that may be embedded in the secret from copy-paste.
+          # A hidden newline in the username makes Docker encode "user\n:pass" in
+          # base64 which produces a header Docker Hub rejects as malformed.
+          CLEAN_USER=$(printf '%s' "$DOCKER_USERNAME" | tr -d '[:space:]')
+          CLEAN_PASS=$(printf '%s' "$DOCKER_PASSWORD" | tr -d '[:space:]')
+          echo "Username length: ${#CLEAN_USER}"
+          echo "Password length: ${#CLEAN_PASS}"
+          printf '%s' "$CLEAN_PASS" | docker login docker.io -u "$CLEAN_USER" --password-stdin
         env:
           DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
           DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
